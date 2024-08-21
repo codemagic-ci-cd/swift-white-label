@@ -1,0 +1,86 @@
+definitions:     
+  env_vars: &env_vars
+    S3_BUCKET_NAME: cmswiftwhitelabel # The name of your S3 bucket that have all of your clients assets.
+    APP_ICON: AppIcon.appiconset
+    HEADER: header.imageset
+    LAUNCH_SCREEN: launchScreenColor.colorset
+  scripts:
+    - &get_assets
+      name: Get assets from AWS S3 bucket
+      script: |
+        ASSETS_FOLDER=assets_${CLIENT_ID}
+        echo "ASSETS_FOLDER=$ASSETS_FOLDER" >> $CM_ENV
+        
+        aws s3 cp s3://$S3_BUCKET_NAME/$ASSETS_FOLDER.tar.gz $ASSETS_FOLDER.tar.gz
+        # unzip $ASSETS_FOLDER.zip -d $ASSETS_FOLDER
+        tar -zxvf $ASSETS_FOLDER.tar.gz
+
+workflows:
+    ios-workflow:
+      name: iOS Workflow
+      labels:
+        - ${CLIENT_ID}
+      environment:
+        xcode: 15.4
+        cocoapods: default
+        vars:
+          <<: *env_vars
+          XCODE_SCHEME: swiftlabel
+
+        groups:
+          - aws_credentials
+      triggering:
+        events:
+          - push
+        branch_patterns:
+          - pattern: 'main'
+            include: true
+            source: true
+      scripts:
+        - *get_assets
+
+        - name: Change iOS app name
+          script: /usr/libexec/PlistBuddy -c "Set :CFBundleName $APP_NAME" -c "Set :CFBundleDisplayName $APP_NAME" ./${XCODE_SCHEME}/Info.plist
+        
+        - name: Set bundle id
+          script: sed -i '' -e 's/PRODUCT_BUNDLE_IDENTIFIER \= [^\;]*\;/PRODUCT_BUNDLE_IDENTIFIER = '${BUNDLE_ID}';/' ./${XCODE_SCHEME}.xcodeproj/project.pbxproj
+        
+        - name: Change App Icon
+          script: cp -r ./$ASSETS_FOLDER/$APP_ICON ./${XCODE_SCHEME}/Assets.xcassets/
+
+        - name: Change Launch Sreen Color
+          script: cp -r ./$ASSETS_FOLDER/$LAUNCH_SCREEN ./${XCODE_SCHEME}/Assets.xcassets/
+
+        - name: Change Header Image
+          script: cp -r ./$ASSETS_FOLDER/$HEADER ./${XCODE_SCHEME}/Assets.xcassets/
+
+        - name: Change Config.plist
+          script: cp -r ./$ASSETS_FOLDER/Config.plist ./${XCODE_SCHEME}/
+       
+        - name: iOS code signing
+          script: |
+            keychain initialize
+            app-store-connect fetch-signing-files "$BUNDLE_ID" --type IOS_APP_STORE --create
+            keychain add-certificates
+            xcode-project use-profiles
+        - name: Install CocoaPods dependencies
+          script: |
+            pod install
+        - name: Increment build number
+          script: |
+            # agvtool new-version -all $(($BUILD_NUMBER + 1))
+            agvtool new-version -all $(($(app-store-connect get-latest-testflight-build-number "$APP_STORE_ID") + 1))
+
+        - name: Build ipa for distribution
+          script: |
+            xcode-project build-ipa --workspace "${XCODE_SCHEME}.xcworkspace" --scheme "${XCODE_SCHEME}"
+      artifacts:
+        - build/ios/ipa/*.ipa
+        - $HOME/Library/Developer/Xcode/DerivedData/**/Build/**/*.dSYM
+      publishing:      
+        app_store_connect:
+          api_key: $APP_STORE_CONNECT_PRIVATE_KEY
+          key_id: $APP_STORE_CONNECT_KEY_IDENTIFIER
+          issuer_id: $APP_STORE_CONNECT_ISSUER_ID        
+
+

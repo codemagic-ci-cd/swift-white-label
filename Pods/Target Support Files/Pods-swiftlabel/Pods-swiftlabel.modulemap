@@ -1,0 +1,6 @@
+framework module Pods_swiftlabel {
+  umbrella header "Pods-swiftlabel-umbrella.h"
+
+  export *
+  module * { export * }
+}

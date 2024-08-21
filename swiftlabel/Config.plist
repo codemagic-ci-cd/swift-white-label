@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>latitude</key>
+	<real>58.37539501707234</real>
+	<key>longitude</key>
+	<real>26.721860162778924</real>
+	<key>backgroundColor</key>
+	<string>#01561D</string>
+    <key>pillColor</key>
+    <string>#33AF5C</string>
+    <key>pillTextColor</key>
+    <string>#FFFFFF</string>
+    <key>amenities</key>
+        <array>
+            <string>Wi-Fi</string>
+            <string>40" HDTV</string>
+            <string>Free Parking</string>
+            <string>Mini bar</string>
+            <string>Ironing board</string>
+            <string>Pool table</string>
+            <string>Hair dryer</string>
+            <string>Restaurant</string>
+        </array>
+    <key>hotelName</key>
+    <string>Tartu Hotel</string>
+    <key>hotelDescription</key>
+    <string>A charming hotel in Tartu, Estonia, offering modern comfort amidst historic surroundings, close to vibrant cultural sites, universities, and the scenic Emajõgi River—ideal for exploring the heart of the city.</string>
+    <key>hotelCountry</key>
+    <string>Estonia</string>
+    <key>hotelCity</key>
+    <string>Tartu</string>
+</dict>
+</plist>
